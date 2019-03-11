@@ -1,0 +1,10 @@
+D:\Personal projects\CompressBySepareting\CompressBySepareting\bin\Debug\CompressBySepareting.exe.manifest
+D:\Personal projects\CompressBySepareting\CompressBySepareting\bin\Debug\CompressBySepareting.application
+D:\Personal projects\CompressBySepareting\CompressBySepareting\bin\Debug\CompressBySepareting.exe
+D:\Personal projects\CompressBySepareting\CompressBySepareting\bin\Debug\CompressBySepareting.pdb
+D:\Personal projects\CompressBySepareting\CompressBySepareting\obj\Debug\CompressBySepareting.csprojAssemblyReference.cache
+D:\Personal projects\CompressBySepareting\CompressBySepareting\obj\Debug\CompressBySepareting.csproj.CoreCompileInputs.cache
+D:\Personal projects\CompressBySepareting\CompressBySepareting\obj\Debug\CompressBySepareting.exe.manifest
+D:\Personal projects\CompressBySepareting\CompressBySepareting\obj\Debug\CompressBySepareting.application
+D:\Personal projects\CompressBySepareting\CompressBySepareting\obj\Debug\CompressBySepareting.exe
+D:\Personal projects\CompressBySepareting\CompressBySepareting\obj\Debug\CompressBySepareting.pdb
