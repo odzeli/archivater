@@ -1,4 +1,4 @@
-﻿namespace CompressBySepareting.Decompress
+﻿namespace CompressBySepareting
 {
     public class BlockDetails
     {

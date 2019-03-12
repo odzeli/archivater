@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Collections.Generic;
 
 namespace CompressBySepareting
 {
@@ -27,19 +27,20 @@ namespace CompressBySepareting
             Console.Write(".");
             try
             {
-                lock (_locker)
-                    using (var sourceStream = new FileStream(_sourceFile, FileMode.OpenOrCreate))
+                using (var sourceStream = new FileStream(_sourceFile, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read))
+                {
+                    var bufferMessage = new byte[_compressBufferSize];
+                    var newFile = Archiver.FormNewFileName(_targetCompressedFile, _offset);
+                    using (var targetStream = new FileStream(newFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write))
                     {
-                        var bufferMessage = new byte[_compressBufferSize];
-                        var newFile = Archiver.FormNewFileName(_targetCompressedFile, _offset);
-                        using (var targetStream = new FileStream(newFile, FileMode.OpenOrCreate))
+                        sourceStream.Seek(_offset, SeekOrigin.Begin);
+                        sourceStream.Read(bufferMessage, 0, _compressBufferSize);
+                        lock (_locker)
                         {
                             using (var memoryStream = new MemoryStream())
                             {
                                 using (var compressionStream = new GZipStream(memoryStream, CompressionMode.Compress))
                                 {
-                                    sourceStream.Seek(_offset, SeekOrigin.Begin);
-                                    sourceStream.Read(bufferMessage, 0, _compressBufferSize);
                                     compressionStream.Write(bufferMessage, 0, _compressBufferSize);
                                 }
 
@@ -51,6 +52,7 @@ namespace CompressBySepareting
                             }
                         }
                     }
+                }
             }
             catch (Exception e)
             {

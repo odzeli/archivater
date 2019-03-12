@@ -1,14 +1,12 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 
 namespace CompressBySepareting
 {
     class Archiver
     {
-        private int _maxThreadPoolCount = 20;
         private static int _bufferSize = 1000000;
         private readonly object _locker = new object();
 
@@ -16,31 +14,22 @@ namespace CompressBySepareting
         {
             try
             {
-                int partsCount;
-                var threadPool = new List<Thread>();
+                var threadPool = new PoolOfThread();
+                var fs = new FileInfo(sourceFile);
+                var partsCount = (int)(fs.Length / _bufferSize);
+                partsCount = fs.Length % _bufferSize != 0 ? ++partsCount : partsCount;
 
-                using (FileStream fs = new FileStream(sourceFile, FileMode.OpenOrCreate))
-                {
-                    partsCount = (int)(fs.Length / _bufferSize);
-                    partsCount = fs.Length % _bufferSize != 0 ? ++partsCount : partsCount;
-                }
                 Console.WriteLine("Compressing started...");
                 Compressor compress = null;
+
                 for (var i = 0; i < partsCount;)
                 {
-                    var count = threadPool.Count(t => t.IsAlive);
-                    if (count <= _maxThreadPoolCount)
-                    {
-                        var offset = i * _bufferSize;
-                        compress = new Compressor(sourceFile, _bufferSize, _locker, offset, targetCompressedFile);
-                        Thread myThread = new Thread(compress.Compressing) {Name = i.ToString()};
-                        threadPool.Add(myThread);
-                        i++;
-                        myThread.Start();
-                    }
+                    var offset = i * _bufferSize;
+                    compress = new Compressor(sourceFile, _bufferSize, _locker, offset, targetCompressedFile);
+                    Thread myThread = new Thread(compress.Compressing) { Name = i.ToString() };
+                    threadPool.Add(myThread);
+                    i++;
                 }
-
-                Wait(threadPool);
                 compress?.PutAllCompressedFilesTogether(partsCount);
                 Console.WriteLine($"\nParts count: {partsCount}");
             }
@@ -54,22 +43,15 @@ namespace CompressBySepareting
         {
             try
             {
-
-                var threadPool = new List<Thread>();
-                var compressedBufferHistory = Decompress.Decompressor.CountCompressedBufferHistory(sourceCompresedFile);
+                var threadPool = new PoolOfThread();
+                var compressedBufferHistory = Decompressor.CountCompressedBufferHistory(sourceCompresedFile);
                 for (var i = 0; i < compressedBufferHistory.Count;)
                 {
-                    var count = threadPool.Count(t => t.IsAlive);
-                    if (count <= _maxThreadPoolCount)
-                    {
-                        var decompress = new Decompress.Decompressor(sourceCompresedFile, compressedBufferHistory, _locker, targetDecompressedFile, i);
-                        Thread myThread = new Thread(decompress.Decompressing) {Name = i.ToString()};
-                        threadPool.Add(myThread);
-                        i++;
-                        myThread.Start();
-                    }
+                    var decompress = new Decompressor(sourceCompresedFile, compressedBufferHistory, _locker, targetDecompressedFile, i);
+                    Thread myThread = new Thread(decompress.Decompressing) { Name = i.ToString() };
+                    threadPool.Add(myThread);
+                    i++;
                 }
-                Wait(threadPool);
                 Console.WriteLine($"\nParts count: {compressedBufferHistory.Count}");
             }
             catch (Exception e)

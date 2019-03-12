@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Collections.Generic;
 
-namespace CompressBySepareting.Decompress
+namespace CompressBySepareting
 {
     public class Decompressor
     {
@@ -23,26 +23,34 @@ namespace CompressBySepareting.Decompress
 
         public void Decompressing()
         {
-            Console.Write(".");
-            var compressedFileOffset = CountAllPreviouslyOffset(_decompressedBufferHistory, _part, true);
-            var decompressedFileOffset = CountAllPreviouslyOffset(_decompressedBufferHistory, _part, false);
-
-            lock (_locker)
+            try
             {
-                using (FileStream fileToDecompress = new FileStream(_sourceCompressedFile, FileMode.Open))
+                lock (_locker)
                 {
-                    using (FileStream targetStream = new FileStream(_targetDecompressedFile, FileMode.OpenOrCreate))
+                    Console.Write(".");
+                    var compressedFileOffset = CountAllPreviouslyOffset(_decompressedBufferHistory, _part);
+                    var decompressedFileOffset = _part * _decompressedBufferHistory[_part].DecompressBufferBlock;
+
+                    using (FileStream fileToDecompress = new FileStream(_sourceCompressedFile, FileMode.Open))
                     {
-                        targetStream.Seek(decompressedFileOffset, SeekOrigin.Begin);
-                        fileToDecompress.Seek(compressedFileOffset, SeekOrigin.Begin);
-                        byte[] temporaryBufferWithOffset = new byte[_decompressedBufferHistory[_part].DecompressBufferBlock];
-                        using (GZipStream gzip = new GZipStream(fileToDecompress, CompressionMode.Decompress))
+                        using (FileStream targetStream = new FileStream(_targetDecompressedFile, FileMode.OpenOrCreate))
                         {
-                            gzip.Read(temporaryBufferWithOffset, 0, temporaryBufferWithOffset.Length);
-                            targetStream.Write(temporaryBufferWithOffset, 0, temporaryBufferWithOffset.Length);
+                            targetStream.Seek(decompressedFileOffset, SeekOrigin.Begin);
+                            fileToDecompress.Seek(compressedFileOffset, SeekOrigin.Begin);
+                            byte[] temporaryBufferWithOffset = new byte[_decompressedBufferHistory[_part].DecompressBufferBlock];
+                            using (GZipStream gzip = new GZipStream(fileToDecompress, CompressionMode.Decompress))
+                            {
+                                gzip.Read(temporaryBufferWithOffset, 0, temporaryBufferWithOffset.Length);
+                                targetStream.Write(temporaryBufferWithOffset, 0, temporaryBufferWithOffset.Length);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.ReadKey();
             }
         }
 
@@ -78,21 +86,14 @@ namespace CompressBySepareting.Decompress
             }
         }
 
-        private static long CountAllPreviouslyOffset(Dictionary<int, BlockDetails> previousBuffer, int i, bool isCompressed)
+        private static long CountAllPreviouslyOffset(Dictionary<int, BlockDetails> previousBuffer, int i)
         {
             long offset = 0;
             if (i > 0)
             {
                 for (int j = 0; j < i; j++)
                 {
-                    if (isCompressed)
-                    {
-                        offset = offset + previousBuffer[j].BufferBlock;
-                    }
-                    else
-                    {
-                        offset = offset + previousBuffer[j].DecompressBufferBlock;
-                    }
+                    offset = offset + previousBuffer[j].BufferBlock;
                 }
                 return offset;
             }
