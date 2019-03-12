@@ -71,6 +71,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlockCompressor.cs" />
+    <Compile Include="BlockDecompressor.cs" />
     <Compile Include="Compressor.cs" />
     <Compile Include="Archiver.cs" />
     <Compile Include="BlockDetails.cs" />

@@ -20,17 +20,18 @@ namespace CompressBySepareting
                 partsCount = fs.Length % _bufferSize != 0 ? ++partsCount : partsCount;
 
                 Console.WriteLine("Compressing started...");
-                Compressor compress = null;
 
                 for (var i = 0; i < partsCount;)
                 {
                     var offset = i * _bufferSize;
-                    compress = new Compressor(sourceFile, _bufferSize, _locker, offset, targetCompressedFile);
-                    Thread myThread = new Thread(compress.Compressing) { Name = i.ToString() };
+                    var blockCompress = new BlockCompressor(sourceFile, _bufferSize, _locker, offset, targetCompressedFile, i);
+                    Thread myThread = new Thread(blockCompress.Compressing) { Name = i.ToString() };
                     threadPool.Add(myThread);
                     i++;
                 }
-                compress?.PutAllCompressedFilesTogether(partsCount);
+                threadPool.Wait();
+                var compressor = new Compressor(_bufferSize, targetCompressedFile);
+                compressor.PutAllCompressedFilesTogether(partsCount);
                 Console.WriteLine($"\nParts count: {partsCount}");
             }
             catch (Exception e)
@@ -45,35 +46,16 @@ namespace CompressBySepareting
             {
                 var threadPool = new PoolOfThread();
                 var compressedBufferHistory = Decompressor.CountCompressedBufferHistory(sourceCompresedFile);
+                Console.WriteLine("Decompressing started...");
                 for (var i = 0; i < compressedBufferHistory.Count;)
                 {
-                    var decompress = new Decompressor(sourceCompresedFile, compressedBufferHistory, _locker, targetDecompressedFile, i);
-                    Thread myThread = new Thread(decompress.Decompressing) { Name = i.ToString() };
+                    var blockDecompress = new BlockDecompressor(sourceCompresedFile, compressedBufferHistory, _locker, targetDecompressedFile, i);
+                    Thread myThread = new Thread(blockDecompress.Decompressing) { Name = i.ToString() };
                     threadPool.Add(myThread);
                     i++;
                 }
+                threadPool.Wait();
                 Console.WriteLine($"\nParts count: {compressedBufferHistory.Count}");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.ReadKey();
-            }
-        }
-
-        private void Wait(List<Thread> treadsPool)
-        {
-            try
-            {
-
-                var active = true;
-                while (active)
-                {
-                    foreach (var thread in treadsPool)
-                    {
-                        active = thread.IsAlive;
-                    }
-                }
             }
             catch (Exception e)
             {

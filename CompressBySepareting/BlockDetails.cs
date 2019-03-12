@@ -2,8 +2,8 @@
 {
     public class BlockDetails
     {
-        public int BufferBlock { get; set; }
+        public int IndexOffsetOfCompressedFileBlock { get; set; }
 
-        public int DecompressBufferBlock { get; set; }
+        public int IndexOffsetForDecompressFileBlock { get; set; }
     }
 }
