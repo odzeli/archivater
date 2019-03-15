@@ -24,14 +24,6 @@ namespace CompressBySepareting
             }
         }
 
-        public void Abort()
-        {
-            foreach (var thread in _threads)
-            {
-                thread.Abort();
-            }
-        }
-
         public void Add(Thread thread)
         {
             if (_resetThreads)

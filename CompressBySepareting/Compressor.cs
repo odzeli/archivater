@@ -65,23 +65,5 @@ namespace CompressBySepareting
                 throw;
             }
         }
-
-        public void DeleteTemporaryFiles()
-        {
-            lock (_locker)
-            {
-                for (int i = 0; i < _partsCount; i++)
-                {
-                    Console.Write(".");
-                    long offset = i * (long)_compressBufferSize;
-                    var file = Archiver.FormNewFileName(_targetCompressedFile, offset);
-                    if (File.Exists(file))
-                    {
-                        File.Delete(file);
-                    }
-                }
-            }
-        }
-
     }
 }
