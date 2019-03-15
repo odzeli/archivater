@@ -14,7 +14,7 @@ namespace CompressBySepareting
                 Dictionary<int, BlockDetails> compressedBufferHistory = new Dictionary<int, BlockDetails>();
                 using (FileStream streamToDecompress = new FileStream(sourceCompressedFile, FileMode.Open))
                 {
-                    while (streamToDecompress.Position < streamToDecompress.Length)
+                    while (streamToDecompress.Position < streamToDecompress.Length - 1)
                     {
                         var bufferForMetaData = new byte[8];
                         streamToDecompress.Read(bufferForMetaData, 0, bufferForMetaData.Length);
@@ -23,7 +23,7 @@ namespace CompressBySepareting
                         bufferForMetaData.CopyTo(compressedBlock, 0);
                         streamToDecompress.Read(compressedBlock, bufferForMetaData.Length, compressedBlock.Length - 8);
                         bufferInfo.IndexOffsetForDecompressFileBlock = BitConverter.ToInt32(compressedBlock, bufferInfo.IndexOffsetOfCompressedFileBlock - 4);
-                        //it means that size of archive bigger then file's size and remaining bytes are empty
+                        //it means that size of archive bigger then inner file's size and remaining bytes are empty
                         if (bufferInfo.IndexOffsetForDecompressFileBlock != 0)
                         {
                             compressedBufferHistory.Add(count, bufferInfo);
@@ -31,14 +31,11 @@ namespace CompressBySepareting
                         count++;
                     }
                 }
-
                 return compressedBufferHistory;
             }
-            catch (Exception e)
+            catch (UnauthorizedAccessException)
             {
-                Console.WriteLine(e.Message);
-                Console.ReadKey();
-                throw;
+                throw new UnauthorizedAccessException($"App hasn't acces to file {sourceCompressedFile}");
             }
         }
 

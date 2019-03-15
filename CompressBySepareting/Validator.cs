@@ -22,7 +22,7 @@ namespace CompressBySepareting
 
             if (!sourceFile.Exists)
             {
-                throw new Exception($"Application can't find source file '{sourceFile.FullName}' for process it.");
+                throw new IOException($"Application can't find source file '{sourceFile.FullName}' for process it.");
             }
 
             if (targetFile.Exists)
@@ -69,6 +69,14 @@ namespace CompressBySepareting
                     throw new Exception("Target file's type is wrong. Please, replace file and try again.");
                 }
             }
+        }
+
+        public static bool IsDiskFull(Exception ex)
+        {
+            const int hrErrorHandleDiskFull = unchecked((int)0x80070027);
+            const int hrErrorDiskFull = unchecked((int)0x80070070);
+
+            return ex.HResult == hrErrorHandleDiskFull || ex.HResult == hrErrorDiskFull;
         }
     }
 }

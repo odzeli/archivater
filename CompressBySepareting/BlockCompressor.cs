@@ -8,17 +8,12 @@ namespace CompressBySepareting
     {
 
         private readonly long _offset;
-        private readonly object _locker;
         private readonly string _sourceFile;
         private readonly int _compressBufferSize;
         private readonly string _targetCompressedFile;
-        private readonly int _part;
 
-        public BlockCompressor(string sourceFile, int compressBufferSize, object locker, long offset,
-            string targetCompressedFile, int part)
+        public BlockCompressor(string sourceFile, int compressBufferSize, long offset, string targetCompressedFile)
         {
-            _part = part;
-            _locker = locker;
             _offset = offset;
             _sourceFile = sourceFile;
             _compressBufferSize = compressBufferSize;
@@ -27,17 +22,21 @@ namespace CompressBySepareting
 
         public void Compressing()
         {
-            Console.Write(".");
             try
             {
-                using (var sourceStream = new FileStream(_sourceFile, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read))
+                Console.Write(".");
+                using (var sourceStream =
+                    new FileStream(_sourceFile, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read))
                 {
                     var newFile = Archiver.FormNewFileName(_targetCompressedFile, _offset);
-                    using (var targetStream = new FileStream(newFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write))
+                    using (var targetStream =
+                        new FileStream(newFile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write))
                     {
                         sourceStream.Seek(_offset, SeekOrigin.Begin);
                         var remainingLength = sourceStream.Length - _offset;
-                        var bufferMessage = remainingLength < _compressBufferSize ? new byte[remainingLength] : new byte[_compressBufferSize];
+                        var bufferMessage = remainingLength < _compressBufferSize
+                            ? new byte[remainingLength]
+                            : new byte[_compressBufferSize];
                         sourceStream.Read(bufferMessage, 0, bufferMessage.Length);
                         using (var memoryStream = new MemoryStream())
                         {
@@ -53,10 +52,33 @@ namespace CompressBySepareting
                     }
                 }
             }
+            catch (IOException e)
+            {
+                if (Validator.IsDiskFull(e))
+                {
+                    Console.WriteLine(
+                        "Not enought disk space where your source file located. Please, free up some memory on this disk.");
+                    Console.WriteLine("App completed with code 0");
+                    Environment.Exit(0);
+                }
+            }
+            catch (OutOfMemoryException)
+            {
+                Console.WriteLine("Lack of RAM. Please, close other application and try again.");
+                Console.WriteLine("App completed with code 0");
+                Environment.Exit(0);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine($"App hasn't acces to file {_sourceFile} or {_targetCompressedFile}");
+                Console.WriteLine("App completed with code 0");
+                Environment.Exit(0);
+            }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                Console.ReadKey();
+                Console.WriteLine("App completed with code 0");
+                Environment.Exit(0);
             }
         }
 

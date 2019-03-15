@@ -4,46 +4,41 @@ using System.Collections.Generic;
 
 namespace CompressBySepareting
 {
-    public class Compressor 
+    public class Compressor
     {
+        private readonly int _partsCount;
         private readonly int _compressBufferSize;
         private readonly string _targetCompressedFile;
+        private readonly object _locker = new object();
 
-        public Compressor( int compressBufferSize, string targetCompressedFile) 
+        public Compressor(int compressBufferSize, string targetCompressedFile, int partsCount)
         {
             _compressBufferSize = compressBufferSize;
             _targetCompressedFile = targetCompressedFile;
+            _partsCount = partsCount;
         }
 
-        public void PutAllCompressedFilesTogether(int partsCount)
+        public void PutAllCompressedFilesTogether()
         {
-            try
+            var previousBuffer = new Dictionary<int, int>();
+            for (int i = 0; i < _partsCount; i++)
             {
-                var previousBuffer = new Dictionary<int, int>();
-                for (int i = 0; i < partsCount; i++)
+                Console.Write(".");
+                long offset = i * (long)_compressBufferSize;
+                var file = Archiver.FormNewFileName(_targetCompressedFile, offset);
+                using (FileStream nextFile = new FileStream(file, FileMode.Open))
                 {
-                    Console.Write(".");
-                    long offset = i * _compressBufferSize;
-                    var file = Archiver.FormNewFileName(_targetCompressedFile, offset);
-                    using (FileStream nextFile = new FileStream(file, FileMode.Open))
+                    var bufferMessage = new byte[nextFile.Length];
+                    nextFile.Read(bufferMessage, 0, bufferMessage.Length);
+                    previousBuffer.Add(i, bufferMessage.Length);
+                    using (FileStream targetStream = new FileStream(_targetCompressedFile, FileMode.OpenOrCreate))
                     {
-                        var bufferMessage = new byte[nextFile.Length];
-                        nextFile.Read(bufferMessage, 0, bufferMessage.Length);
-                        previousBuffer.Add(i, bufferMessage.Length);
-                        using (FileStream targetStream = new FileStream(_targetCompressedFile, FileMode.OpenOrCreate))
-                        {
-                            var localOffset = CountAllPreviouslyOffset(previousBuffer, i);
-                            targetStream.Seek(localOffset, SeekOrigin.Begin);
-                            targetStream.Write(bufferMessage, 0, bufferMessage.Length);
-                        }
+                        var localOffset = CountAllPreviouslyOffset(previousBuffer, i);
+                        targetStream.Seek(localOffset, SeekOrigin.Begin);
+                        targetStream.Write(bufferMessage, 0, bufferMessage.Length);
                     }
-                    File.Delete(file);
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                Console.ReadKey();
+                File.Delete(file);
             }
         }
 
@@ -55,7 +50,7 @@ namespace CompressBySepareting
                 long offset = 0;
                 if (i > 0)
                 {
-                    for (int j = 0; j < i; j++)
+                    for (var j = 0; j < i; j++)
                     {
                         offset = offset + previousBuffer[j];
                     }
@@ -65,10 +60,28 @@ namespace CompressBySepareting
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
                 Console.ReadKey();
                 throw;
             }
         }
+
+        public void DeleteTemporaryFiles()
+        {
+            lock (_locker)
+            {
+                for (int i = 0; i < _partsCount; i++)
+                {
+                    Console.Write(".");
+                    long offset = i * (long)_compressBufferSize;
+                    var file = Archiver.FormNewFileName(_targetCompressedFile, offset);
+                    if (File.Exists(file))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+        }
+
     }
 }

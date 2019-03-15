@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace CompressBySepareting
 {
-    class PoolOfThread
+    public class PoolOfThread
     {
         private List<Thread> _threads;
 
@@ -21,6 +21,14 @@ namespace CompressBySepareting
             foreach (var thread in _threads)
             {
                 thread.Join();
+            }
+        }
+
+        public void Abort()
+        {
+            foreach (var thread in _threads)
+            {
+                thread.Abort();
             }
         }
 

@@ -9,13 +9,14 @@ namespace CompressBySepareting
             //Please, use follow pattern to compress or decompress file:
             //GZipTest.exe compress [Source file path] [Destination file path]
             //If you use app from VS with debug then you should to uncomment args below
-            args = new string[3];
-            args[0] = @"decompress";
-            args[1] = @"D:\text2.gz";
-            args[2] = @"D:\text2new.txt";
+            //args = new string[3];
+            //args[0] = @"decompress";
+            //args[1] = @"D:\text2.gz";
+            //args[2] = @"D:\text3.txt";
 
             try
             {
+
                 Validator.CheckInputFileNames(args);
 
                 var file = new Archiver();
@@ -28,11 +29,13 @@ namespace CompressBySepareting
                         file.StartDecompress(args[1], args[2]);
                         break;
                 }
+                Console.WriteLine("App completed with code 1");
                 Console.ReadKey();
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+                Console.WriteLine("App completed with code 0");
                 Console.ReadKey();
             }
         }

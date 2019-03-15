@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CompressBySepareting
 {
@@ -12,15 +9,13 @@ namespace CompressBySepareting
     {
 
         private readonly int _part;
-        private readonly object _locker;
         private static string _sourceCompressedFile;
         private readonly string _targetDecompressedFile;
         private readonly Dictionary<int, BlockDetails> _decompressedBufferHistory;
 
-        public BlockDecompressor(string sourceCompressedFile, Dictionary<int, BlockDetails> decompressedBufferHistory, object locker, string targetDecompressedFile, int part)
+        public BlockDecompressor(string sourceCompressedFile, Dictionary<int, BlockDetails> decompressedBufferHistory, string targetDecompressedFile, int part)
         {
             _part = part;
-            _locker = locker;
             _sourceCompressedFile = sourceCompressedFile;
             _targetDecompressedFile = targetDecompressedFile;
             _decompressedBufferHistory = decompressedBufferHistory;
@@ -49,10 +44,26 @@ namespace CompressBySepareting
                     }
                 }
             }
-            catch (Exception e)
+            catch (IOException e)
             {
-                Console.WriteLine(e.Message);
-                Console.ReadKey();
+                if (Validator.IsDiskFull(e))
+                {
+                    Console.WriteLine("Not enought disk space where your source file located. Please, free up some memory on this disk.");
+                    Console.WriteLine("App completed with code 0");
+                    Environment.Exit(0);
+                }
+            }
+            catch (OutOfMemoryException)
+            {
+                Console.WriteLine("Lack of RAM. Please, close other application and try again.");
+                Console.WriteLine("App completed with code 0");
+                Environment.Exit(0);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine($"App hasn't acces to file {_sourceCompressedFile} or {_targetDecompressedFile}");
+                Console.WriteLine("App completed with code 0");
+                Environment.Exit(0);
             }
         }
 
